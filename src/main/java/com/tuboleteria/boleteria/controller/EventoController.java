@@ -38,6 +38,17 @@ public class EventoController {
         return eventoService.crearEvento(evento);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizarEvento(@PathVariable Long id, @RequestBody Evento evento) {
+        try {
+            Evento eventoActualizado = eventoService.actualizarEvento(id, evento);
+            return ResponseEntity.ok(eventoActualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarEvento(@PathVariable Long id) {
         eventoService.eliminarEvento(id);

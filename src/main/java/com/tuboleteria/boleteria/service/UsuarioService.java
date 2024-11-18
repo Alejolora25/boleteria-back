@@ -55,6 +55,22 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
+    public Usuario actualizarUsuario(Long id, Usuario usuario) {
+        Usuario usuarioExistente = usuarioRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El usuario no existe."));
+
+        // Actualizar los campos que vienen en la solicitud
+        usuarioExistente.setNombre(usuario.getNombre());
+        usuarioExistente.setCorreo(usuario.getCorreo());
+
+        // Solo actualizar contraseña si se proporciona
+        if (usuario.getContraseña() != null && !usuario.getContraseña().isEmpty()) {
+            usuarioExistente.setContraseña(passwordEncoder.encode(usuario.getContraseña()));
+        }
+
+        return usuarioRepository.save(usuarioExistente);
+    }
+
     public boolean verificarContraseña(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }

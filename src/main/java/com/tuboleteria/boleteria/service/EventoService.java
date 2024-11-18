@@ -30,6 +30,21 @@ public class EventoService {
         return eventoRepository.save(evento);
     }
 
+    public Evento actualizarEvento(Long id, Evento evento) {
+        Evento eventoExistente = eventoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Evento no encontrado con ID: " + id));
+    
+        // Actualizar los campos necesarios
+        eventoExistente.setNombre(evento.getNombre());
+        eventoExistente.setDescripcion(evento.getDescripcion());
+        eventoExistente.setFecha(evento.getFecha());
+        eventoExistente.setLugar(evento.getLugar());
+        eventoExistente.setCapacidad(evento.getCapacidad());
+    
+        return eventoRepository.save(eventoExistente);
+    }
+    
+
     public void eliminarEvento(Long id) {
         eventoRepository.deleteById(id);
     }

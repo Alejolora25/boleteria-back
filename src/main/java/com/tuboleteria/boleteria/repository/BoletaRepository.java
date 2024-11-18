@@ -21,5 +21,12 @@ public interface BoletaRepository extends JpaRepository<Boleta, Long> {
 
     // Ejemplo de filtro por estado con paginación
     Page<Boleta> findByEstado(String estado, Pageable pageable);
+
+    // Nuevos métodos
+    Page<Boleta> findByNombreCompradorContainingIgnoreCase(String nombreComprador, Pageable pageable);
+    Page<Boleta> findByIdentificacionCompradorContainingIgnoreCase(String identificacionComprador, Pageable pageable);
+    Page<Boleta> findByCorreoCompradorContainingIgnoreCase(String correoComprador, Pageable pageable);
+    Page<Boleta> findByCelularContainingIgnoreCase(String celular, Pageable pageable);
+
 }
 

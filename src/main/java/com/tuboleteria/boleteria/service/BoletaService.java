@@ -67,6 +67,27 @@ public class BoletaService {
         return boletaRepository.saveAll(boletas);
     }
 
+    public Boleta actualizarBoleta(Long id, Boleta boleta) {
+        Boleta boletaExistente = boletaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Boleta no encontrada con ID: " + id));
+    
+        // Actualizar los campos necesarios
+        boletaExistente.setNombreComprador(boleta.getNombreComprador());
+        boletaExistente.setIdentificacionComprador(boleta.getIdentificacionComprador());
+        boletaExistente.setCorreoComprador(boleta.getCorreoComprador());
+        boletaExistente.setCelular(boleta.getCelular());
+        boletaExistente.setEdad(boleta.getEdad());
+        boletaExistente.setValorTotal(boleta.getValorTotal());
+        boletaExistente.setMetodoPago(boleta.getMetodoPago());
+        boletaExistente.setEstado(boleta.getEstado());
+        boletaExistente.setNumeroTransaccion(boleta.getNumeroTransaccion());
+        boletaExistente.setTipo(boleta.getTipo());
+        boletaExistente.setEtapaVenta(boleta.getEtapaVenta());
+    
+        return boletaRepository.save(boletaExistente);
+    }
+    
+
     public Boleta actualizarEstadoUsado(Long id) {
         Optional<Boleta> boletaOpt = boletaRepository.findById(id);
         if (boletaOpt.isPresent()) {
@@ -108,8 +129,21 @@ public class BoletaService {
         return boletaRepository.findAll(pageable);
     }
 
-    // Método para obtener boletas por estado con paginación
-    public Page<Boleta> obtenerBoletasPorEstadoPaginadas(String estado, Pageable pageable) {
-        return boletaRepository.findByEstado(estado, pageable);
+    // Métodos de búsqueda con paginación
+    public Page<Boleta> buscarBoletasPorNombre(String nombre, Pageable pageable) {
+        return boletaRepository.findByNombreCompradorContainingIgnoreCase(nombre, pageable);
     }
+
+    public Page<Boleta> buscarBoletasPorIdentificacion(String identificacion, Pageable pageable) {
+        return boletaRepository.findByIdentificacionCompradorContainingIgnoreCase(identificacion, pageable);
+    }
+
+    public Page<Boleta> buscarBoletasPorCorreo(String correo, Pageable pageable) {
+        return boletaRepository.findByCorreoCompradorContainingIgnoreCase(correo, pageable);
+    }
+
+    public Page<Boleta> buscarBoletasPorCelular(String celular, Pageable pageable) {
+        return boletaRepository.findByCelularContainingIgnoreCase(celular, pageable);
+    }
+    
 }

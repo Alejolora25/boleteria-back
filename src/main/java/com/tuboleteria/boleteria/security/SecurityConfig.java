@@ -6,6 +6,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -13,25 +14,32 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @Configuration
 public class SecurityConfig {
 
+    private final JwtUtil jwtUtil;
+
+    public SecurityConfig(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Usa la configuración recomendada
-            .csrf(csrf -> csrf.disable()) // Desactiva CSRF para pruebas
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll() // Permitir acceso sin autenticación
-                .requestMatchers("/api/usuarios").hasRole("ADMIN") // Solo usuarios con rol ADMIN pueden acceder
-                .requestMatchers("/api/eventos/**", "/api/boletas/**").hasAnyRole("ADMIN", "USER") // Usuarios autenticados pueden acceder
-                .anyRequest().authenticated() // Proteger todo lo demás
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/usuarios").hasRole("ADMIN")
+                .requestMatchers("/api/eventos/**", "/api/boletas/**").hasAnyRole("ADMIN", "USER")
+                .anyRequest().authenticated()
             )
-            .httpBasic(httpBasic -> httpBasic.realmName("MyApp")) // Configura HTTP Basic con un nombre de realm
+            .addFilterBefore(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
             .logout(logout -> logout
-                .logoutUrl("/api/auth/logout") // Define el endpoint para logout
+                .logoutUrl("/api/auth/logout")
                 .logoutSuccessHandler((request, response, authentication) -> {
-                    response.setStatus(200); // Responder con 200 OK
+                    response.setStatus(200);
                     response.getWriter().write("Logout exitoso.");
                 })
             );
+
         return http.build();
     }
 

@@ -2,6 +2,7 @@ package com.tuboleteria.boleteria.controller;
 
 import com.tuboleteria.boleteria.model.LoginRequest;
 import com.tuboleteria.boleteria.model.Usuario;
+import com.tuboleteria.boleteria.security.JwtUtil;
 import com.tuboleteria.boleteria.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,10 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
+
     @GetMapping("/me")
     public Authentication getCurrentUser(Authentication authentication) {
         return authentication; // Devuelve el usuario autenticado
@@ -36,9 +41,10 @@ public class AuthController {
         // Verificar si el usuario existe y si la contraseña coincide
         if (usuarioOpt.isPresent() &&
             passwordEncoder.matches(loginRequest.getContraseña(), usuarioOpt.get().getContraseña())) {
-            
-            // Crear un token ficticio para pruebas (en un caso real, generar JWT)
-            String token = "fake-jwt-token"; 
+
+            // Generar el token JWT
+            Usuario usuario = usuarioOpt.get();
+            String token = jwtUtil.generateToken(usuario.getId(), usuario.getCorreo(), usuario.getRoles()); // Genera el token con roles
             
             // Devolver respuesta con el token
             return ResponseEntity.ok(Map.of(
