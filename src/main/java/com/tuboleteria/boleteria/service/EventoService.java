@@ -3,6 +3,7 @@ package com.tuboleteria.boleteria.service;
 import com.tuboleteria.boleteria.model.Evento;
 import com.tuboleteria.boleteria.repository.EventoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -46,6 +47,10 @@ public class EventoService {
     
 
     public void eliminarEvento(Long id) {
-        eventoRepository.deleteById(id);
+        try {
+            eventoRepository.deleteById(id);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalStateException("No se puede eliminar el evento porque tiene boletas asociadas.", e);
+        }
     }
 }

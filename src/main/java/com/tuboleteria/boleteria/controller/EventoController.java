@@ -3,6 +3,7 @@ package com.tuboleteria.boleteria.controller;
 import com.tuboleteria.boleteria.model.Evento;
 import com.tuboleteria.boleteria.service.EventoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,8 +51,13 @@ public class EventoController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarEvento(@PathVariable Long id) {
-        eventoService.eliminarEvento(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> eliminarEvento(@PathVariable Long id) {
+        try {
+            eventoService.eliminarEvento(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
+
 }
