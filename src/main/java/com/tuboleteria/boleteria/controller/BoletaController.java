@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 
 import jakarta.mail.MessagingException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -172,6 +173,34 @@ public class BoletaController {
         }
     }
 
+    @GetMapping("/filtrar-por-vendedor")
+    public Page<Boleta> filtrarBoletasPorVendedorYCampo(
+        @RequestParam(required = false) String nombreVendedor,
+        @RequestParam(required = false) String campo,
+        @RequestParam(required = false) String valor,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Si no hay vendedor seleccionado, usar el filtro general
+        if (nombreVendedor == null || nombreVendedor.isEmpty()) {
+            return filtrarBoletas(campo, valor, page, size);
+        }
+
+        // Si hay vendedor, combinar filtros
+        return boletaService.filtrarPorVendedorYCampo(nombreVendedor, campo, valor, pageable);
+    }
+
+
+    @GetMapping("/vendedores")
+    public ResponseEntity<List<Usuario>> obtenerVendedores() {
+        List<Usuario> vendedores = boletaService.obtenerVendedoresUnicos();
+        return ResponseEntity.ok(vendedores);
+    }
+
+
+
     @PostMapping("/{id}/enviar")
     public ResponseEntity<?> enviarBoleta(@PathVariable Long id) {
         try {
@@ -236,5 +265,26 @@ public class BoletaController {
         }
         return pdfStream;
     }
-    
+
+    //ESTADISTICAS PARA HOME
+    @GetMapping("/estadisticas")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticas() {
+        Map<String, Object> estadisticas = new HashMap<>();
+
+        estadisticas.put("totalVendidas", boletaService.contarBoletasPorEstado("Vendido"));
+        estadisticas.put("totalUsadas", boletaService.contarBoletasPorEstado("Usado"));
+        estadisticas.put("ingresosTotales", boletaService.calcularIngresosPorEstado("Vendido"));
+        estadisticas.put("ingresosVIP", boletaService.calcularIngresosPorTipo("VIP"));
+        estadisticas.put("ingresosGeneral", boletaService.calcularIngresosPorTipo("General"));
+        estadisticas.put("boletasVIP", boletaService.contarBoletasPorTipo("VIP"));
+        estadisticas.put("boletasGeneral", boletaService.contarBoletasPorTipo("General"));
+        estadisticas.put("topClientes", boletaService.obtenerTopClientes());
+        estadisticas.put("boletasPorVendedor", boletaService.obtenerBoletasVendidasPorVendedor());
+        estadisticas.put("ingresosPorVendedor", boletaService.calcularIngresosPorVendedor());
+        estadisticas.put("porcentajeMetodoPago", boletaService.calcularPorcentajeVentasPorMetodoPago());
+        estadisticas.put("edadPromedio", boletaService.calcularEdadPromedioCompradores());
+
+        return ResponseEntity.ok(estadisticas);
+    }
+  
 }

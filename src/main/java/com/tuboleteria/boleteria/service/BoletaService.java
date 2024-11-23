@@ -1,12 +1,14 @@
 package com.tuboleteria.boleteria.service;
 
 import com.tuboleteria.boleteria.model.Boleta;
+import com.tuboleteria.boleteria.model.Usuario;
 import com.tuboleteria.boleteria.repository.BoletaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -145,5 +147,62 @@ public class BoletaService {
     public Page<Boleta> buscarBoletasPorCelular(String celular, Pageable pageable) {
         return boletaRepository.findByCelularContainingIgnoreCase(celular, pageable);
     }
+
+    public List<Usuario> obtenerVendedoresUnicos() {
+        return boletaRepository.findDistinctVendedores();
+    }
+
+    public Page<Boleta> filtrarPorVendedorYCampo(String nombreVendedor, String campo, String valor, Pageable pageable) {
+        switch (campo.toLowerCase()) {
+            case "nombre":
+                return boletaRepository.findByVendedorAndNombreCompradorContainingIgnoreCase(nombreVendedor, valor, pageable);
+            case "identificacion":
+                return boletaRepository.findByVendedorAndIdentificacionCompradorContainingIgnoreCase(nombreVendedor, valor, pageable);
+            case "correo":
+                return boletaRepository.findByVendedorAndCorreoCompradorContainingIgnoreCase(nombreVendedor, valor, pageable);
+            case "telefono":
+                return boletaRepository.findByVendedorAndCelularContainingIgnoreCase(nombreVendedor, valor, pageable);
+            default:
+                throw new IllegalArgumentException("Campo de búsqueda no válido");
+        }
+    }
     
+
+    //ESTADISTICAS PARA HOME
+    public Long contarBoletasPorEstado(String estado) {
+    return boletaRepository.countBoletasByEstado(estado);
+    }
+
+    public BigDecimal calcularIngresosPorEstado(String estado) {
+        return boletaRepository.sumIngresosByEstado(estado);
+    }
+
+    public BigDecimal calcularIngresosPorTipo(String tipo) {
+        return boletaRepository.sumIngresosByTipo(tipo);
+    }
+
+    public Long contarBoletasPorTipo(String tipo) {
+        return boletaRepository.countBoletasByTipo(tipo);
+    }
+
+    public List<Object[]> obtenerTopClientes() {
+        return boletaRepository.findTopCliente();
+    }
+
+    public List<Object[]> obtenerBoletasVendidasPorVendedor() {
+        return boletaRepository.findBoletasVendidasPorVendedor();
+    }
+
+    public List<Object[]> calcularIngresosPorVendedor() {
+        return boletaRepository.sumIngresosPorVendedor();
+    }
+
+    public List<Object[]> calcularPorcentajeVentasPorMetodoPago() {
+        return boletaRepository.findVentasPorMetodoPago();
+    }
+
+    public Double calcularEdadPromedioCompradores() {
+        return boletaRepository.calcularEdadPromedio();
+    }
+  
 }
