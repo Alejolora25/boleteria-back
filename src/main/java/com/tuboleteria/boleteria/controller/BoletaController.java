@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.core.io.ClassPathResource;
+
 
 import com.tuboleteria.boleteria.service.MailService;
 import com.google.zxing.BarcodeFormat;
@@ -230,34 +232,102 @@ public class BoletaController {
     private ByteArrayOutputStream generarPdfBoleta(Boleta boleta) {
         ByteArrayOutputStream pdfStream = new ByteArrayOutputStream();
         try {
-            // Crear documento PDF
-            com.lowagie.text.Document document = new com.lowagie.text.Document();
-            com.lowagie.text.pdf.PdfWriter.getInstance(document, pdfStream);
+            // Crear documento PDF en tamaño carta
+            com.lowagie.text.Document document = new com.lowagie.text.Document(new com.lowagie.text.Rectangle(216, 279));
+            com.lowagie.text.pdf.PdfWriter writer = com.lowagie.text.pdf.PdfWriter.getInstance(document, pdfStream);
     
             document.open();
-            document.addTitle("Boleta");
-            document.add(new com.lowagie.text.Paragraph("Detalle de la Boleta"));
-            document.add(new com.lowagie.text.Paragraph("Nombre: " + boleta.getNombreComprador()));
-            document.add(new com.lowagie.text.Paragraph("Identificación: " + boleta.getIdentificacionComprador()));
-            document.add(new com.lowagie.text.Paragraph("Correo: " + boleta.getCorreoComprador()));
-            document.add(new com.lowagie.text.Paragraph("Evento: " + boleta.getEvento().getNombre()));
-            document.add(new com.lowagie.text.Paragraph("Tipo: " + boleta.getTipo()));
-            document.add(new com.lowagie.text.Paragraph("Fecha de Compra: " + boleta.getFechaCompra()));
+    
+            com.lowagie.text.pdf.PdfContentByte canvas = writer.getDirectContent();
+    
+            // Marco general
+            canvas.setLineWidth(1.5f);
+            canvas.rectangle(10, 10, 196, 259); // Dimensiones del marco
+            canvas.stroke();
+    
+            // Título del evento
+            com.lowagie.text.Font titleFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 8, com.lowagie.text.Font.BOLD);
+            com.lowagie.text.Paragraph title = new com.lowagie.text.Paragraph(boleta.getEvento().getNombre(), titleFont);
+            title.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            title.setSpacingBefore(15); // Espaciado desde el borde superior
+            title.setSpacingAfter(5);   // Espaciado hacia la imagen
+            document.add(title);
+    
+            // Imagen del evento
+            ClassPathResource imgFile = new ClassPathResource("static/images/IMG_0872.PNG");
+            com.lowagie.text.Image eventImage = com.lowagie.text.Image.getInstance(imgFile.getInputStream().readAllBytes());
+            eventImage.scaleToFit(70, 90); // Ajustar tamaño
+            eventImage.setAbsolutePosition(73, 165); // Posicionada más abajo para evitar el texto
+            document.add(eventImage);
+    
+            // Marco interior del detalle de la boleta
+            canvas.setLineWidth(0.5f);
+            canvas.roundRectangle(15, 85, 186, 100, 5); // Ajustado para no superponerse con la imagen
+            canvas.stroke();
+    
+            // Encabezado del detalle
+            com.lowagie.text.Font headerFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 6, com.lowagie.text.Font.BOLD);
+            com.lowagie.text.Paragraph header = new com.lowagie.text.Paragraph("Detalle de la Boleta", headerFont);
+            header.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            header.setSpacingBefore(95); // Ajustado para estar dentro del marco de detalle
+            document.add(header);
+    
+            // Información de la boleta
+            int contentY = 95; // Posición inicial del contenido
+            int lineSpacing = 8; // Espaciado entre líneas
+    
+            // Detalles de la boleta
+            canvas.beginText();
+            canvas.setFontAndSize(com.lowagie.text.pdf.BaseFont.createFont(), 5); // Tamaño de letra reducido
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Nombre: " + boleta.getNombreComprador(), 20, contentY, 0);
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Identificación: " + boleta.getIdentificacionComprador(), 20, contentY - lineSpacing, 0);
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Correo: " + boleta.getCorreoComprador(), 20, contentY - 2 * lineSpacing, 0);
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Celular: " + boleta.getCelular(), 20, contentY - 3 * lineSpacing, 0);
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Edad: " + boleta.getEdad(), 20, contentY - 4 * lineSpacing, 0);
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Tipo: " + boleta.getTipo(), 20, contentY - 5 * lineSpacing, 0);
+            canvas.showTextAligned(com.lowagie.text.Element.ALIGN_LEFT, "Fecha de Compra: " + boleta.getFechaCompra(), 20, contentY - 6 * lineSpacing, 0);
+            canvas.endText();
     
             // Generar imagen QR
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(
-                boleta.getCodigoQr(), BarcodeFormat.QR_CODE, 300, 300);
-    
+            BitMatrix bitMatrix = qrCodeWriter.encode(boleta.getCodigoQr(), BarcodeFormat.QR_CODE, 300, 300);
             BufferedImage qrImage = MatrixToImageWriter.toBufferedImage(bitMatrix);
     
-            // Convertir imagen QR a byte array
             ByteArrayOutputStream qrOutputStream = new ByteArrayOutputStream();
             ImageIO.write(qrImage, "PNG", qrOutputStream);
     
             // Agregar QR al PDF
             com.lowagie.text.Image qrPdfImage = com.lowagie.text.Image.getInstance(qrOutputStream.toByteArray());
+            qrPdfImage.scaleToFit(50, 50);
+            qrPdfImage.setAbsolutePosition(150, 95); // Ajustado para estar en el espacio correcto
             document.add(qrPdfImage);
+    
+            // Condiciones de uso
+            canvas.setColorFill(java.awt.Color.BLACK);
+            canvas.rectangle(15, 30, 186, 10); // Fondo negro ajustado
+            canvas.fill();
+    
+            com.lowagie.text.Font conditionTitleFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 5, com.lowagie.text.Font.BOLD, java.awt.Color.WHITE);
+            com.lowagie.text.Paragraph conditionTitle = new com.lowagie.text.Paragraph(
+                    "ESTE ES SU TICKET DIGITAL PARA INGRESAR AL EVENTO - RECOMENDACIONES DE USO",
+                    conditionTitleFont
+            );
+            conditionTitle.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            conditionTitle.setSpacingBefore(40); // Espaciado para no superponerse
+            document.add(conditionTitle);
+    
+            com.lowagie.text.Font conditionFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 4);
+            com.lowagie.text.Paragraph conditions = new com.lowagie.text.Paragraph(
+                    "1. POR FAVOR IMPRIMA SOLO LOS TICKET DIGITAL RECIBIDOS.\n" +
+                    "2. SI USTED HA COMPRADO VARIAS ENTRADAS, IMPRIMA CADA TICKET DIGITAL POR SEPARADO.\n" +
+                    "3. EN CASO DE REIMPRIMIR O COPIAR UN TICKET DIGITAL, SOLO SE PERMITIRÁ EL INGRESO A UNO DE ELLOS.\n" +
+                    "4. EL TICKET DIGITAL PUEDE SER IMPRESO A COLOR O EN BLANCO Y NEGRO, ASEGÚRESE QUE EL CÓDIGO QR SEA LEGIBLE.\n" +
+                    "5. NO PUBLIQUE LOS TICKET DIGITAL NI EXPONGA EL CÓDIGO QR EN REDES SOCIALES.\n" +
+                    "6. EL TICKET DIGITAL PUEDE SER PRESENTADO EN SU CELULAR O OTRO DISPOSITIVO.",
+                    conditionFont
+            );
+            conditions.setSpacingBefore(5);
+            document.add(conditions);
     
             document.close();
         } catch (Exception e) {
@@ -265,6 +335,10 @@ public class BoletaController {
         }
         return pdfStream;
     }
+    
+    
+    
+
 
     //ESTADISTICAS PARA HOME
     @GetMapping("/estadisticas")
@@ -276,8 +350,10 @@ public class BoletaController {
         estadisticas.put("ingresosTotales", boletaService.calcularIngresosPorEstado("Vendido"));
         estadisticas.put("ingresosVIP", boletaService.calcularIngresosPorTipo("VIP"));
         estadisticas.put("ingresosGeneral", boletaService.calcularIngresosPorTipo("General"));
+        estadisticas.put("ingresosPalco", boletaService.calcularIngresosPorTipo("Palco"));
         estadisticas.put("boletasVIP", boletaService.contarBoletasPorTipo("VIP"));
         estadisticas.put("boletasGeneral", boletaService.contarBoletasPorTipo("General"));
+        estadisticas.put("boletasPalco", boletaService.contarBoletasPorTipo("Palco"));
         estadisticas.put("topClientes", boletaService.obtenerTopClientes());
         estadisticas.put("boletasPorVendedor", boletaService.obtenerBoletasVendidasPorVendedor());
         estadisticas.put("ingresosPorVendedor", boletaService.calcularIngresosPorVendedor());

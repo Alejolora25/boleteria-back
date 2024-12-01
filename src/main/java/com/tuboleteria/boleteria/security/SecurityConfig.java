@@ -46,7 +46,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("https://boleteria-front.vercel.app"); // Dominio principal de tu frontend
+        configuration.addAllowedOriginPattern("https://boleteria-front.vercel.app"); // Dominio principal de tu frontend https://boleteria-front.vercel.app
         configuration.addAllowedMethod("*"); // Permitir todos los métodos (GET, POST, PUT, DELETE, etc.)
         configuration.addAllowedHeader("*"); // Permitir todos los headers necesarios
         configuration.setAllowCredentials(true); // Permitir cookies y credenciales
